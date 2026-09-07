@@ -20,6 +20,7 @@ $started = microtime(true);
 $log = function (string $msg) use ($started) { echo sprintf('[%6.1fs] %s', microtime(true) - $started, $msg), PHP_EOL; };
 
 try {
+	ensure_schema_upgrades();
 	$log('locations: ' . sync_locations());
 	foreach (list_locations(true) as $loc) {
 		$id = $loc['id'];

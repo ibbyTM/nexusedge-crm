@@ -29,11 +29,13 @@ const BOOTSTRAP_ADMIN_NAME = 'Your Name';
 // (Agency Settings > Private Integrations). Needs at least these scopes:
 // locations.readonly, contacts.readonly, contacts.write, workflows.readonly,
 // locations/tags.readonly, locations/customFields.readonly, users.readonly,
-// oauth.write (only if you rely on the location token exchange below).
+// and oauth.write so the agency token can be exchanged for sub-account tokens
+// (HighLevel refuses sub-account endpoints called with the agency token directly).
 const GHL_AGENCY_TOKEN = 'pit-REPLACE_WITH_YOUR_AGENCY_TOKEN';
 
-// Optional. Your agency (company) id, used to list sub-accounts. Leave empty to
-// let the API infer it from the token.
+// Optional. Your agency (company) id. Normally detected from the sub-account
+// list; set it if the sync reports it cannot work out the company id.
+// Agency View > Settings > Business Profile.
 const GHL_COMPANY_ID = '';
 
 // Optional. If the token cannot list the whole agency (it was created inside

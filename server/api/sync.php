@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if (!$cronKeyOk) require_admin();
+ensure_schema_upgrades();
 $body = read_json_body();
 $step = str_field($body, 'step', 20) ?: (is_string($_GET['step'] ?? null) ? $_GET['step'] : '');
 $locationId = str_field($body, 'locationId', 64) ?: (is_string($_GET['locationId'] ?? null) ? $_GET['locationId'] : '');

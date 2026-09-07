@@ -26,9 +26,20 @@ CREATE TABLE IF NOT EXISTS locations (
   postal_code VARCHAR(32) NULL,
   website VARCHAR(255) NULL,
   timezone VARCHAR(64) NULL,
+  company_id VARCHAR(64) NULL,
   enabled TINYINT(1) NOT NULL DEFAULT 1,
   synced_at VARCHAR(32) NULL,
   PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Short-lived sub-account tokens exchanged from the agency token
+-- (POST /oauth/locationToken). Cached so the exchange happens once a day.
+CREATE TABLE IF NOT EXISTS ghl_location_tokens (
+  location_id VARCHAR(64) NOT NULL,
+  access_token TEXT NOT NULL,
+  expires_at INT NOT NULL,
+  created_at VARCHAR(32) NOT NULL,
+  PRIMARY KEY (location_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS contacts (

@@ -97,15 +97,27 @@ if ($path === '/__reset') { @unlink($stateFile); out(['reset' => true]); }
 if ($path === '/__state') { out(load_state($stateFile)); }
 if (!str_starts_with($auth, 'Bearer ') || strlen($auth) < 12) out(['statusCode' => 401, 'message' => 'Invalid token'], 401);
 if (!isset($_SERVER['HTTP_VERSION'])) out(['statusCode' => 400, 'message' => 'Version header is required'], 400);
+$bearer = substr($auth, 7);
+// MOCK_GHL_AGENCY_MODE=1 mimics HighLevel: the agency token may only list
+// locations and mint sub-account tokens; everything else needs a loc- token.
+if (getenv('MOCK_GHL_AGENCY_MODE')) {
+	$agencyOnly = in_array($path, ['/locations/search', '/oauth/locationToken'], true) || preg_match('#^/locations/[^/]+$#', $path);
+	if (!$agencyOnly && !str_starts_with($bearer, 'loc-')) out(['statusCode' => 401, 'message' => 'The token is not authorized for this scope.'], 401);
+	if ($path === '/oauth/locationToken') {
+		parse_str(file_get_contents('php://input'), $form);
+		if (($form['companyId'] ?? '') !== 'comp_nexusedge' || empty($form['locationId'])) out(['statusCode' => 422, 'message' => 'companyId and locationId are required'], 422);
+		out(['access_token' => 'loc-' . $form['locationId'] . '-' . substr(md5((string)time()), 0, 6), 'token_type' => 'Bearer', 'expires_in' => 86399, 'scope' => 'contacts.readonly contacts.write', 'locationId' => $form['locationId']]);
+	}
+}
 if (getenv('MOCK_GHL_FLAKY') && mt_rand(1, 10) === 1) { header('Retry-After: 1'); out(['statusCode' => 429, 'message' => 'Too many requests'], 429); }
 
 $s = load_state($stateFile);
 
 if ($path === '/locations/search' && $method === 'GET') {
-	out(['locations' => array_map(fn($l) => $l + ['address' => null, 'state' => null, 'postalCode' => null], $s['locations'])]);
+	out(['locations' => array_map(fn($l) => $l + ['address' => null, 'state' => null, 'postalCode' => null, 'companyId' => 'comp_nexusedge'], $s['locations'])]);
 }
 if (preg_match('#^/locations/([^/]+)$#', $path, $m) && $method === 'GET') {
-	foreach ($s['locations'] as $l) if ($l['id'] === $m[1]) out(['location' => $l]);
+	foreach ($s['locations'] as $l) if ($l['id'] === $m[1]) out(['location' => $l + ['companyId' => 'comp_nexusedge']]);
 	out(['statusCode' => 404, 'message' => 'Location not found'], 404);
 }
 if (preg_match('#^/locations/([^/]+)/tags$#', $path, $m) && $method === 'GET') out(['tags' => $s['tags'][$m[1]] ?? []]);

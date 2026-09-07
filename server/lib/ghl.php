@@ -26,15 +26,74 @@ function ghl_base(): string {
 	return rtrim(defined('GHL_API_BASE') ? GHL_API_BASE : 'https://services.leadconnectorhq.com', '/');
 }
 
-/** Token for a location: an explicit override if configured, else the agency token. */
-function ghl_token_for_location(?string $locationId): string {
-	if ($locationId !== null && defined('GHL_LOCATION_TOKENS') && is_array(GHL_LOCATION_TOKENS) && !empty(GHL_LOCATION_TOKENS[$locationId])) {
-		return GHL_LOCATION_TOKENS[$locationId];
-	}
+function ghl_agency_token(): string {
 	if (!defined('GHL_AGENCY_TOKEN') || !GHL_AGENCY_TOKEN || str_starts_with(GHL_AGENCY_TOKEN, 'pit-REPLACE')) {
 		throw new GhlException('HighLevel token is not configured (GHL_AGENCY_TOKEN in config.php).', 500);
 	}
 	return GHL_AGENCY_TOKEN;
+}
+
+/**
+ * Token for a sub-account call, in order of preference:
+ *  1. an explicit per-location token from GHL_LOCATION_TOKENS,
+ *  2. a cached sub-account token previously exchanged from the agency token,
+ *  3. the agency token itself (works for agency-wide calls; sub-account calls
+ *     that answer 401/403 trigger the exchange in ghl_request and a retry).
+ */
+function ghl_token_for_location(?string $locationId): string {
+	if ($locationId !== null && defined('GHL_LOCATION_TOKENS') && is_array(GHL_LOCATION_TOKENS) && !empty(GHL_LOCATION_TOKENS[$locationId])) {
+		return GHL_LOCATION_TOKENS[$locationId];
+	}
+	if ($locationId !== null) {
+		$cached = get_cached_location_token($locationId);
+		if ($cached !== null) return $cached;
+	}
+	return ghl_agency_token();
+}
+
+/** True when the token for this location is the shared agency token (so an exchange is possible). */
+function ghl_location_uses_agency_token(string $locationId): bool {
+	if (defined('GHL_LOCATION_TOKENS') && is_array(GHL_LOCATION_TOKENS) && !empty(GHL_LOCATION_TOKENS[$locationId])) return false;
+	return get_cached_location_token($locationId) === null;
+}
+
+/**
+ * Exchanges the agency token for a sub-account token (POST /oauth/locationToken)
+ * and caches it. HighLevel expects the agency's company id alongside the
+ * location id; it comes from the mirrored location, GHL_COMPANY_ID, or a
+ * lookup of the location itself.
+ */
+function ghl_exchange_location_token(string $locationId): string {
+	$companyId = defined('GHL_COMPANY_ID') && GHL_COMPANY_ID !== '' ? GHL_COMPANY_ID : null;
+	if ($companyId === null) {
+		$loc = get_location($locationId);
+		$companyId = $loc['company_id'] ?? null;
+	}
+	if ($companyId === null) {
+		try {
+			$res = ghl_request('GET', "/locations/$locationId", ['token' => ghl_agency_token(), 'noExchange' => true]);
+			$companyId = $res['location']['companyId'] ?? $res['companyId'] ?? null;
+			if ($companyId !== null) upsert_location(($res['location'] ?? $res) + ['id' => $locationId]);
+		} catch (GhlException $e) {
+			// fall through to the clear error below
+		}
+	}
+	if ($companyId === null) {
+		throw new GhlException('Could not work out the agency (company) id needed to exchange the agency token for a sub-account token. Set GHL_COMPANY_ID in config.php (Agency View > Settings > Business Profile).', 500);
+	}
+	try {
+		$res = ghl_request('POST', '/oauth/locationToken', [
+			'token' => ghl_agency_token(), 'noExchange' => true, 'form' => true,
+			'body' => ['companyId' => $companyId, 'locationId' => $locationId],
+		]);
+	} catch (GhlException $e) {
+		throw new GhlException('HighLevel refused to issue a sub-account token for ' . $locationId . ': ' . $e->getMessage()
+			. ' The agency Private Integration needs the scope that allows generating location tokens (oauth.write). Alternatively create a Private Integration inside that sub-account and add it to GHL_LOCATION_TOKENS in config.php.', $e->status, $e->body);
+	}
+	$token = $res['access_token'] ?? null;
+	if (!is_string($token) || $token === '') throw new GhlException('HighLevel returned no access_token from /oauth/locationToken', 502);
+	save_location_token($locationId, $token, (int)($res['expires_in'] ?? 86000));
+	return $token;
 }
 
 /** Blocks briefly when the current 10 second window is nearly full. */
@@ -53,6 +112,10 @@ function ghl_request(string $method, string $path, array $opts = []): array {
 	$locationId = $opts['locationId'] ?? null;
 	$token = $opts['token'] ?? ghl_token_for_location($locationId);
 	$version = $opts['version'] ?? GHL_VERSION_DEFAULT;
+	// A sub-account call made with the shared agency token may be refused; when
+	// that happens we exchange for a sub-account token and retry once.
+	$canExchange = empty($opts['noExchange']) && empty($opts['token']) && $locationId !== null && ghl_location_uses_agency_token($locationId);
+	$exchanged = false;
 	$url = ghl_base() . '/' . ltrim($path, '/');
 	if (!empty($opts['query'])) {
 		$url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($opts['query']);
@@ -117,6 +180,15 @@ function ghl_request(string $method, string $path, array $opts = []): array {
 		if ($status >= 200 && $status < 300) {
 			return is_array($decoded) ? $decoded : [];
 		}
+		if (($status === 401 || $status === 403) && $canExchange && !$exchanged) {
+			$exchanged = true;
+			$token = ghl_exchange_location_token($locationId);
+			continue;
+		}
+		if (($status === 401 || $status === 403) && $exchanged) {
+			// The cached sub-account token no longer works; drop it so the next call re-exchanges.
+			forget_location_token($locationId);
+		}
 		$message = 'HighLevel returned ' . $status;
 		if (is_array($decoded)) {
 			$m = $decoded['message'] ?? $decoded['error'] ?? null;
@@ -124,7 +196,8 @@ function ghl_request(string $method, string $path, array $opts = []): array {
 			if (is_string($m) && $m !== '') $message = $m;
 		}
 		$message .= ' [' . $method . ' ' . parse_url($url, PHP_URL_PATH) . ']';
-		if ($status === 401) $message .= ' The token was rejected. Check GHL_AGENCY_TOKEN in config.php and that it has not been rotated or expired.';
+		if ($status === 401 && stripos($message, 'scope') !== false) $message .= ' The Private Integration is missing the scope this call needs. Open it in HighLevel and tick the matching View or Edit permission.';
+		elseif ($status === 401) $message .= ' The token was rejected. Check GHL_AGENCY_TOKEN in config.php and that it has not been rotated or expired.';
 		if ($status === 403) $message .= ' Forbidden usually means a missing scope on the Private Integration, or a token created inside a sub-account being used for an agency-wide call.';
 		throw new GhlException($message, $status, mb_substr($body, 0, 2000));
 	}

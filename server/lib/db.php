@@ -34,6 +34,19 @@ function db_json_decode($value, $default = []) {
 	return $decoded === null ? $default : $decoded;
 }
 
+/**
+ * Brings an older database up to the current schema. Cheap (two lookups), so
+ * the sync endpoints call it before doing anything.
+ */
+function ensure_schema_upgrades(): void {
+	$pdo = get_db();
+	$col = $pdo->query("SHOW COLUMNS FROM locations LIKE 'company_id'")->fetch();
+	if (!$col) $pdo->exec('ALTER TABLE locations ADD COLUMN company_id VARCHAR(64) NULL AFTER timezone');
+	$pdo->exec('CREATE TABLE IF NOT EXISTS ghl_location_tokens (
+		location_id VARCHAR(64) NOT NULL, access_token TEXT NOT NULL, expires_at INT NOT NULL, created_at VARCHAR(32) NOT NULL,
+		PRIMARY KEY (location_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+}
+
 /* ---------- users ---------- */
 
 function count_users(): int {
@@ -96,15 +109,15 @@ function delete_user(string $id): void {
 /* ---------- locations ---------- */
 
 function upsert_location(array $loc): void {
-	$sql = 'INSERT INTO locations (id, name, phone, email, address, city, state, country, postal_code, website, timezone, synced_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	$sql = 'INSERT INTO locations (id, name, phone, email, address, city, state, country, postal_code, website, timezone, company_id, synced_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON DUPLICATE KEY UPDATE name = VALUES(name), phone = VALUES(phone), email = VALUES(email), address = VALUES(address),
 		city = VALUES(city), state = VALUES(state), country = VALUES(country), postal_code = VALUES(postal_code),
-		website = VALUES(website), timezone = VALUES(timezone), synced_at = VALUES(synced_at)';
+		website = VALUES(website), timezone = VALUES(timezone), company_id = COALESCE(VALUES(company_id), company_id), synced_at = VALUES(synced_at)';
 	get_db()->prepare($sql)->execute([
 		$loc['id'], $loc['name'] ?? $loc['id'], $loc['phone'] ?? null, $loc['email'] ?? null, $loc['address'] ?? null,
 		$loc['city'] ?? null, $loc['state'] ?? null, $loc['country'] ?? null, $loc['postalCode'] ?? null,
-		$loc['website'] ?? null, $loc['timezone'] ?? null, now_iso(),
+		$loc['website'] ?? null, $loc['timezone'] ?? null, $loc['companyId'] ?? null, now_iso(),
 	]);
 }
 
@@ -122,6 +135,23 @@ function get_location(string $id): ?array {
 
 function set_location_enabled(string $id, bool $enabled): void {
 	get_db()->prepare('UPDATE locations SET enabled = ? WHERE id = ?')->execute([$enabled ? 1 : 0, $id]);
+}
+
+function get_cached_location_token(string $locationId): ?string {
+	$st = get_db()->prepare('SELECT access_token FROM ghl_location_tokens WHERE location_id = ? AND expires_at > ?');
+	$st->execute([$locationId, time() + 60]);
+	$token = $st->fetchColumn();
+	return $token === false ? null : (string)$token;
+}
+
+function save_location_token(string $locationId, string $token, int $expiresIn): void {
+	get_db()->prepare('INSERT INTO ghl_location_tokens (location_id, access_token, expires_at, created_at) VALUES (?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE access_token = VALUES(access_token), expires_at = VALUES(expires_at), created_at = VALUES(created_at)')
+		->execute([$locationId, $token, time() + max(60, $expiresIn), now_iso()]);
+}
+
+function forget_location_token(string $locationId): void {
+	get_db()->prepare('DELETE FROM ghl_location_tokens WHERE location_id = ?')->execute([$locationId]);
 }
 
 /* ---------- location metadata ---------- */
