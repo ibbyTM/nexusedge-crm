@@ -29,6 +29,9 @@ Step "Updating server\config.php"
 $config = Get-Content $ConfigPath -Raw
 $config = [regex]::Replace($config, "const GHL_AGENCY_TOKEN = '[^']*';", "const GHL_AGENCY_TOKEN = '$Token';")
 $config = [regex]::Replace($config, "const GHL_API_BASE = '[^']*';", "const GHL_API_BASE = 'https://services.leadconnectorhq.com';")
+if ($config -notmatch "GHL_LOCATION_IDS") {
+	$config = $config.Replace("const GHL_LOCATION_TOKENS = [];", "const GHL_LOCATION_IDS = [];`r`nconst GHL_LOCATION_TOKENS = [];")
+}
 Set-Content -Path $ConfigPath -Value $config -Encoding UTF8
 Note "token saved, API base set to services.leadconnectorhq.com"
 
@@ -42,7 +45,8 @@ Note "fresh database"
 
 Step "Checking the token against HighLevel"
 $probe = & $PhpExe -r "define('NE_PROBE', 1); require 'server/lib/http.php'; require 'server/lib/ids.php'; require 'server/config.php'; require 'server/lib/db.php'; require 'server/lib/ghl.php'; try { `$r = ghl_search_locations(0, 5); echo 'OK ' . count(`$r['locations'] ?? []) . ' sub-account(s) visible'; } catch (Exception `$e) { echo 'FAIL ' . `$e->getMessage(); }"
-if ($probe -like "OK*") { Note $probe } else { Write-Host "    $probe" -ForegroundColor Yellow; Write-Host "    The token was saved anyway. Check its scopes include locations.readonly and that it was created at the agency level." -ForegroundColor Yellow }
+if ($probe -like "OK*") { Note $probe } else { Write-Host "    $probe" -ForegroundColor Yellow; Write-Host "    The token was saved anyway. Check its scopes include View Locations (locations.readonly) and that it was created at the AGENCY level (Agency Settings > Private Integrations), not inside a sub-account." -ForegroundColor Yellow
+	Write-Host "    If you only have a sub-account token, add that sub-account's id to GHL_LOCATION_IDS in server\config.php and run Sync everything now." -ForegroundColor Yellow }
 
 Step "Starting"
 & (Join-Path $PSScriptRoot "start.ps1")

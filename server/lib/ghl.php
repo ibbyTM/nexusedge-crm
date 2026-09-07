@@ -123,6 +123,9 @@ function ghl_request(string $method, string $path, array $opts = []): array {
 			if (is_array($m)) $m = implode('; ', array_map('strval', $m));
 			if (is_string($m) && $m !== '') $message = $m;
 		}
+		$message .= ' [' . $method . ' ' . parse_url($url, PHP_URL_PATH) . ']';
+		if ($status === 401) $message .= ' The token was rejected. Check GHL_AGENCY_TOKEN in config.php and that it has not been rotated or expired.';
+		if ($status === 403) $message .= ' Forbidden usually means a missing scope on the Private Integration, or a token created inside a sub-account being used for an agency-wide call.';
 		throw new GhlException($message, $status, mb_substr($body, 0, 2000));
 	}
 }

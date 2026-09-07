@@ -10,12 +10,38 @@ require_once __DIR__ . '/ghl.php';
 
 const SYNC_CONTACT_PAGE = 100;
 
-/** Refreshes the list of sub-accounts. Returns the count. */
+/**
+ * Refreshes the list of sub-accounts. Returns the count.
+ *
+ * Normally one agency-wide search. When the token cannot list the agency
+ * (a sub-account level token, or the locations.readonly scope missing) it
+ * falls back to the ids listed in GHL_LOCATION_IDS / GHL_LOCATION_TOKENS.
+ */
 function sync_locations(): int {
+	$configured = [];
+	if (defined('GHL_LOCATION_IDS') && is_array(GHL_LOCATION_IDS)) $configured = array_merge($configured, array_values(GHL_LOCATION_IDS));
+	if (defined('GHL_LOCATION_TOKENS') && is_array(GHL_LOCATION_TOKENS)) $configured = array_merge($configured, array_keys(GHL_LOCATION_TOKENS));
+	$configured = array_values(array_unique(array_filter($configured, 'is_string')));
+
 	$skip = 0;
 	$seen = 0;
 	while (true) {
-		$res = ghl_search_locations($skip, 100);
+		try {
+			$res = ghl_search_locations($skip, 100);
+		} catch (GhlException $e) {
+			if (($e->status === 401 || $e->status === 403) && $configured) {
+				foreach ($configured as $id) {
+					$loc = ghl_get_location($id);
+					$loc = $loc['location'] ?? $loc;
+					if (!empty($loc['id'])) { upsert_location($loc); $seen++; }
+				}
+				return $seen;
+			}
+			if ($e->status === 403) {
+				throw new GhlException($e->getMessage() . ' To mirror specific sub-accounts with a sub-account token instead, list their ids in GHL_LOCATION_IDS in config.php.', 403, $e->body);
+			}
+			throw $e;
+		}
 		$locations = $res['locations'] ?? [];
 		foreach ($locations as $loc) {
 			if (empty($loc['id'])) continue;

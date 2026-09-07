@@ -158,6 +158,7 @@ const BOOTSTRAP_ADMIN_PASSWORD = '$AdminPassword';
 const BOOTSTRAP_ADMIN_NAME = 'Local Admin';
 const GHL_AGENCY_TOKEN = '$ghlToken';
 const GHL_COMPANY_ID = '';
+const GHL_LOCATION_IDS = [];
 const GHL_LOCATION_TOKENS = [];
 const GHL_WEBHOOK_KEY = '$(New-Secret)';
 const GHL_ED25519_PUBLIC_KEY = '';

@@ -36,6 +36,13 @@ const GHL_AGENCY_TOKEN = 'pit-REPLACE_WITH_YOUR_AGENCY_TOKEN';
 // let the API infer it from the token.
 const GHL_COMPANY_ID = '';
 
+// Optional. If the token cannot list the whole agency (it was created inside
+// a sub-account, or you only want some sub-accounts), list the sub-account ids
+// here. Find an id in the HighLevel URL: /v2/location/<THIS PART>/dashboard
+const GHL_LOCATION_IDS = [
+	// 've9EPM428h8vShlRW1KT',
+];
+
 // Optional per-location overrides. If a sub-account needs its own
 // location-level Private Integration token, map its location id to it here.
 // Any location not listed uses GHL_AGENCY_TOKEN.
