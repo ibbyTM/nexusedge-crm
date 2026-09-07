@@ -1,5 +1,8 @@
 # Shared paths and helpers for the Windows scripts. Dot-sourced, not run directly.
 $ErrorActionPreference = "Stop"
+# Windows PowerShell renders a progress bar for every downloaded chunk, which makes
+# Invoke-WebRequest painfully slow on big files. Silence it.
+$ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path

@@ -21,10 +21,23 @@ param(
 
 New-Item -ItemType Directory -Force -Path $Local | Out-Null
 
-function Download($url, $destination) {
+function Download($url, $destination, $sizeHint = "") {
 	if (Test-Path $destination) { Note "already downloaded: $(Split-Path $destination -Leaf)"; return }
-	Note "downloading $url"
-	Invoke-WebRequest -Uri $url -OutFile $destination -UseBasicParsing
+	Note "downloading $url $sizeHint"
+	# Download to a .part file first so an interrupted run never leaves a half zip behind.
+	$partial = "$destination.part"
+	if (Test-Path $partial) { Remove-Item $partial -Force }
+	$client = New-Object System.Net.WebClient
+	$client.Headers.Add("User-Agent", "nexusedge-crm-setup")
+	$started = Get-Date
+	try {
+		$client.DownloadFile($url, $partial)
+	} finally {
+		$client.Dispose()
+	}
+	Move-Item $partial $destination
+	$mb = [math]::Round((Get-Item $destination).Length / 1MB, 1)
+	Note ("saved {0} MB in {1:n0}s" -f $mb, ((Get-Date) - $started).TotalSeconds)
 }
 
 function Extract-Single($zip, $target) {
@@ -45,7 +58,7 @@ if (-not $NodeDir) {
 	$index = Invoke-RestMethod -Uri "https://nodejs.org/dist/index.json" -UseBasicParsing
 	$lts = $index | Where-Object { $_.lts -and $_.version -like "v22.*" } | Select-Object -First 1
 	$version = $lts.version
-	Download "https://nodejs.org/dist/$version/node-$version-win-x64.zip" (Join-Path $Local "node.zip")
+	Download "https://nodejs.org/dist/$version/node-$version-win-x64.zip" (Join-Path $Local "node.zip") "(about 30 MB)"
 	Extract-Single (Join-Path $Local "node.zip") (Join-Path $Local "node")
 	$NodeDir = Join-Path $Local "node"
 }
@@ -54,13 +67,14 @@ Note ("node " + (& node.exe --version))
 
 # ---------------------------------------------------------------- PHP
 Step "PHP"
+if ((Test-Path $PhpDir) -and -not (Test-Path $PhpExe)) { Remove-Item $PhpDir -Recurse -Force }
 if (-not (Test-Path $PhpExe)) {
 	$releases = Invoke-RestMethod -Uri "https://downloads.php.net/~windows/releases/releases.json" -UseBasicParsing
 	$branch = $releases."8.4"
 	if (-not $branch) { $branch = $releases."8.3" }
 	$key = $branch.PSObject.Properties.Name | Where-Object { $_ -like "nts-vs*-x64" } | Select-Object -First 1
 	$zipName = $branch.$key.zip.path
-	Download "https://downloads.php.net/~windows/releases/$zipName" (Join-Path $Local "php.zip")
+	Download "https://downloads.php.net/~windows/releases/$zipName" (Join-Path $Local "php.zip") "(about 30 MB)"
 	Expand-Archive -Path (Join-Path $Local "php.zip") -DestinationPath $PhpDir -Force
 }
 $caFile = Join-Path $PhpDir "cacert.pem"
@@ -92,7 +106,7 @@ foreach ($required in @("curl", "openssl", "pdo_mysql", "mbstring")) {
 Step "MariaDB"
 $mariaVersion = "11.4.7"
 if (-not (Test-Path (Join-Path $MariaDir "bin\mariadbd.exe"))) {
-	Download "https://archive.mariadb.org/mariadb-$mariaVersion/winx64-packages/mariadb-$mariaVersion-winx64.zip" (Join-Path $Local "mariadb.zip")
+	Download "https://archive.mariadb.org/mariadb-$mariaVersion/winx64-packages/mariadb-$mariaVersion-winx64.zip" (Join-Path $Local "mariadb.zip") "(about 90 MB, the big one)"
 	Extract-Single (Join-Path $Local "mariadb.zip") $MariaDir
 }
 if (-not (Test-Path (Join-Path $MariaData "mysql"))) {
