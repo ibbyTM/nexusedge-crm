@@ -1,0 +1,492 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter-tight);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-space-grotesk);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --container-content: min(90vw, 1600px);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0.015 293);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.015 293);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.015 293);
+  --primary: oklch(0.541 0.223 293);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0.008 293);
+  --secondary-foreground: oklch(0.28 0.03 293);
+  --muted: oklch(0.97 0.008 293);
+  --muted-foreground: oklch(0.5 0.02 293);
+  --accent: oklch(0.94 0.03 293);
+  --accent-foreground: oklch(0.35 0.1 293);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.91 0.012 293);
+  --input: oklch(0.91 0.012 293);
+  --ring: oklch(0.606 0.2 293);
+  --chart-1: oklch(0.541 0.223 293);
+  --chart-2: oklch(0.702 0.15 293.5);
+  --chart-3: oklch(0.44 0.19 292.8);
+  --chart-4: oklch(0.811 0.09 293.6);
+  --chart-5: oklch(0.38 0.15 293.7);
+  /* Categorical accents for dashboard mockups (hero-dashboard.tsx) — kept
+     distinct from --chart-* (a purple monochrome ramp, meant for a single
+     data series) since these need to read as different categories at a
+     glance. Validated as a set: see the dataviz skill's palette check. */
+  --dashboard-blue: #2a78d6;
+  --dashboard-orange: #eb6834;
+  --dashboard-aqua: #1baf7a;
+  --dashboard-yellow: #eda100;
+  --radius: 0.25rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.18 0.015 293);
+  --sidebar-primary: oklch(0.541 0.223 293);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.94 0.03 293);
+  --sidebar-accent-foreground: oklch(0.35 0.1 293);
+  --sidebar-border: oklch(0.91 0.012 293);
+  --sidebar-ring: oklch(0.606 0.2 293);
+}
+
+.dark {
+  --background: oklch(0.15 0.02 293);
+  --foreground: oklch(0.97 0.005 293);
+  --card: oklch(0.205 0.025 293);
+  --card-foreground: oklch(0.97 0.005 293);
+  --popover: oklch(0.205 0.025 293);
+  --popover-foreground: oklch(0.97 0.005 293);
+  --primary: oklch(0.702 0.18 293.5);
+  --primary-foreground: oklch(0.15 0.02 293);
+  --secondary: oklch(0.269 0.03 293);
+  --secondary-foreground: oklch(0.97 0.005 293);
+  --muted: oklch(0.269 0.03 293);
+  --muted-foreground: oklch(0.708 0.02 293);
+  --accent: oklch(0.3 0.06 293);
+  --accent-foreground: oklch(0.9 0.05 293);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.702 0.18 293.5);
+  --chart-1: oklch(0.702 0.18 293.5);
+  --chart-2: oklch(0.606 0.2 293);
+  --chart-3: oklch(0.811 0.09 293.6);
+  --chart-4: oklch(0.44 0.19 292.8);
+  --chart-5: oklch(0.541 0.223 293);
+  --dashboard-blue: #3987e5;
+  --dashboard-orange: #d95926;
+  --dashboard-aqua: #199e70;
+  --dashboard-yellow: #c98500;
+  --sidebar: oklch(0.205 0.025 293);
+  --sidebar-foreground: oklch(0.97 0.005 293);
+  --sidebar-primary: oklch(0.702 0.18 293.5);
+  --sidebar-primary-foreground: oklch(0.15 0.02 293);
+  --sidebar-accent: oklch(0.3 0.06 293);
+  --sidebar-accent-foreground: oklch(0.9 0.05 293);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.702 0.18 293.5);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Theme toggle: replace the browser's default cross-fade with our own
+   circular reveal (animated from ThemeToggle via document.startViewTransition) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* Soft vignette so the CTA box's colored edges feather into the page
+   background instead of ending in a hard cutoff. */
+.cta-edge-fade {
+  mask-image: radial-gradient(ellipse 80% 85% at 50% 50%, black 50%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 85% at 50% 50%, black 50%, transparent 100%);
+}
+
+/* Logo badge pulse — plain CSS so it keeps running regardless of React
+   render/effect timing or SPA navigation, unlike a JS-driven loop. */
+@keyframes logo-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+.logo-ping {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: logo-ping 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-ping {
+    animation: none;
+  }
+}
+
+/* Passcode-screen shake on a wrong attempt, iOS-lock-screen style. */
+@keyframes passcode-shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-4px);
+  }
+  40%,
+  60% {
+    transform: translateX(4px);
+  }
+}
+
+.passcode-shake {
+  animation: passcode-shake 0.5s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .passcode-shake {
+    animation: none;
+  }
+}
+
+/* Sitewide ambient glow — a slow "breathing" purple radial behind every
+   page. Pure CSS (no JS, no extra chunk) so it costs effectively nothing. */
+.ambient-glow {
+  background: radial-gradient(
+    45% 40% at 50% 0%,
+    theme(--color-primary/0.16),
+    transparent 70%
+  );
+  animation: ambient-pulse 6s ease-in-out infinite;
+}
+
+@keyframes ambient-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-glow {
+    animation: none;
+  }
+}
+
+/* Tilt card (About page team/role cards) — pointer-driven tilt + glare,
+   adapted from a mouse-tilt profile-card pattern; simplified to pointer
+   tilt only (no device-orientation) and no fake handle/status fields. */
+.tilt-card {
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --rotate-x: 0deg;
+  --rotate-y: 0deg;
+  perspective: 800px;
+}
+
+.tilt-card-inner {
+  position: relative;
+  transform: rotateX(var(--rotate-x)) rotateY(var(--rotate-y));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+.tilt-card:hover .tilt-card-inner {
+  transition-duration: 0.1s;
+}
+
+.tilt-card-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--pointer-x) var(--pointer-y),
+    rgba(255, 255, 255, 0.4),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.tilt-card:hover .tilt-card-glare {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-card-inner {
+    transition: none;
+  }
+}
+
+@media (hover: none) {
+  .tilt-card-inner {
+    transform: none !important;
+  }
+  .tilt-card-glare {
+    display: none;
+  }
+}
+
+/* Spotlight card (Services "what's included" cards) — pointer-follow radial
+   highlight, same imperative CSS-variable pattern as .tilt-card. */
+.spotlight-card {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mouse-x) var(--mouse-y),
+    theme(--color-primary/0.14),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.spotlight-card:hover::before,
+.spotlight-card:focus-within::before {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .spotlight-card::before {
+    display: none;
+  }
+}
+
+/* Bento glow card (Work stat cells) — adapted from MagicBento's border-glow
+   effect, without the original's GSAP-driven particles/tilt/magnetism (this
+   project uses motion/react only, not GSAP, as its one animation library). */
+.glow-card {
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  position: relative;
+}
+
+.glow-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  background: radial-gradient(
+    220px circle at var(--glow-x) var(--glow-y),
+    oklch(from var(--color-primary) l c h / calc(var(--glow-intensity) * 0.9)) 0%,
+    oklch(from var(--color-primary) l c h / calc(var(--glow-intensity) * 0.4)) 30%,
+    transparent 60%
+  );
+  border-radius: inherit;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+@media (hover: none) {
+  .glow-card::after {
+    display: none;
+  }
+}
+
+/* Magnetic wrapper (high-visibility CTA buttons) — nudges its child toward
+   the cursor within a small radius, same imperative CSS-variable pattern as
+   the other pointer-tracking components above. */
+.magnetic-wrapper {
+  --magnetic-x: 0px;
+  --magnetic-y: 0px;
+  display: inline-flex;
+  transform: translate(var(--magnetic-x), var(--magnetic-y));
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.magnetic-wrapper:hover {
+  transition-duration: 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magnetic-wrapper {
+    transition: none;
+  }
+}
+
+@media (hover: none) {
+  .magnetic-wrapper {
+    transform: none !important;
+  }
+}
+
+/* Star border (Work CTA button prototype) — a slow radial glow sweeping
+   around the border, pure CSS keyframes, adapted from a reactbits pattern. */
+.star-border-container {
+  display: inline-block;
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.star-border-container {
+  --star-color: var(--color-primary);
+  padding: 2px;
+}
+
+.star-border-container .star-border-gradient-bottom,
+.star-border-container .star-border-gradient-top {
+  position: absolute;
+  width: 300%;
+  height: 50%;
+  opacity: 0.6;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--star-color), transparent 10%);
+}
+
+.star-border-container .star-border-gradient-bottom {
+  bottom: -12px;
+  right: -250%;
+  animation: star-movement-bottom 6s linear infinite alternate;
+}
+
+.star-border-container .star-border-gradient-top {
+  top: -12px;
+  left: -250%;
+  animation: star-movement-top 6s linear infinite alternate;
+}
+
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-border-container .star-border-gradient-bottom,
+  .star-border-container .star-border-gradient-top {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Logo marquee (Integrations strip) — the track is the tool list rendered
+   twice back to back; translating exactly -50% loops it seamlessly.
+   Transform-only, so it costs nothing beyond the initial paint. */
+.logo-marquee-track {
+  animation: logo-marquee 24s linear infinite;
+}
+
+@keyframes logo-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-marquee-track {
+    animation: none;
+  }
+}

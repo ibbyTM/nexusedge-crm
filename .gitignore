@@ -1,0 +1,31 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+/build
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+
+# local env files
+.env*.local
+.env
+
+# server secrets: DB credentials, HighLevel token, session secret.
+# Never commit the real config.php
+/server/config.php
+
+# runtime-generated state on the host (rate limits, cron locks, PDF cache)
+/server/.rate-limit/
+/server/.locks/
+
+# local dev database dumps
+/server/local/*.sql.gz
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
