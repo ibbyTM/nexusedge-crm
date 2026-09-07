@@ -9,8 +9,10 @@ function get_db(): PDO {
 	if ($pdo !== null) return $pdo;
 
 	try {
+		$dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+		if (defined('DB_PORT') && DB_PORT) $dsn .= ';port=' . (int)DB_PORT;
 		$pdo = new PDO(
-			'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+			$dsn,
 			DB_USER,
 			DB_PASS,
 			[

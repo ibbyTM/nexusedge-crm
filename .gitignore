@@ -23,8 +23,8 @@ npm-debug.log*
 /server/.rate-limit/
 /server/.locks/
 
-# local dev database dumps
-/server/local/*.sql.gz
+# portable PHP, MariaDB and Node downloaded by scripts/windows/setup.ps1
+/.local/
 
 # typescript
 *.tsbuildinfo

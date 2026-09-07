@@ -9,6 +9,8 @@
 
 // MySQL, created in cPanel > MySQL Databases. Run schema.sql once in phpMyAdmin.
 const DB_HOST = 'localhost';
+// Optional. Only needed when MySQL is not on the default port 3306.
+// const DB_PORT = 3307;
 const DB_NAME = 'REPLACE_WITH_YOUR_DB_NAME';
 const DB_USER = 'REPLACE_WITH_YOUR_DB_USER';
 const DB_PASS = 'REPLACE_WITH_YOUR_DB_PASSWORD';

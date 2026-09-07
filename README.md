@@ -103,6 +103,26 @@ HighLevel allows 100 requests per 10 seconds and 200,000 per day per
 sub-account. The client paces itself with a sliding window in MySQL and
 retries on 429. A full sync of 20,000 contacts costs about 200 requests.
 
+## Local development on Windows, the easy way
+
+Double-click `setup.bat` in the project folder. It downloads portable PHP,
+MariaDB and Node into `.local\` (no installers, no admin rights), creates the
+database, writes `server\config.php`, builds the front end, starts everything
+and opens http://127.0.0.1:8080. Sign in with `admin@nexusedge.test` and
+`nexusedge-local`, then run the first sync from Settings.
+
+By default it uses the built-in mock API with sample data. To work against your
+real HighLevel account, run it from a Command Prompt with your agency token:
+
+```bat
+setup.bat pit-your-token-here
+```
+
+or edit `server\config.php` afterwards (`GHL_AGENCY_TOKEN` and `GHL_API_BASE`).
+Later, `start.bat` brings the servers back and `stop.bat` shuts them down.
+After pulling new code, run `npm run build` (or `setup.bat` again) before
+`start.bat`.
+
 ## Local development
 
 Requirements: Node 20 or newer, PHP 8.1 or newer with `pdo_mysql`, `curl`,
