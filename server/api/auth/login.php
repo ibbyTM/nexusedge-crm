@@ -43,6 +43,18 @@ if (!$user && count_users() === 0 && defined('BOOTSTRAP_ADMIN_EMAIL') && BOOTSTR
 }
 
 if (!$user || !password_verify($password, $user['password_hash'])) {
+	if (count_users() === 0) {
+		// Nobody can sign in yet: say precisely what the first login needs.
+		$configured = defined('BOOTSTRAP_ADMIN_EMAIL') && BOOTSTRAP_ADMIN_EMAIL !== '' && defined('BOOTSTRAP_ADMIN_PASSWORD')
+			&& BOOTSTRAP_ADMIN_PASSWORD !== '' && !str_starts_with(BOOTSTRAP_ADMIN_PASSWORD, 'REPLACE');
+		if (!$configured) {
+			send_json(['error' => 'No accounts exist yet and BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD are not set in config.php.'], 401);
+		}
+		if (!hash_equals(mb_strtolower(BOOTSTRAP_ADMIN_EMAIL), $email)) {
+			send_json(['error' => 'No accounts exist yet. Sign in with the BOOTSTRAP_ADMIN_EMAIL from config.php (' . BOOTSTRAP_ADMIN_EMAIL . ').'], 401);
+		}
+		send_json(['error' => 'No accounts exist yet. The password must match BOOTSTRAP_ADMIN_PASSWORD in config.php exactly.'], 401);
+	}
 	send_json(['error' => 'Incorrect email or password'], 401);
 }
 
