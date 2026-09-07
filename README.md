@@ -120,6 +120,9 @@ setup.bat pit-your-token-here
 
 or edit `server\config.php` afterwards (`GHL_AGENCY_TOKEN` and `GHL_API_BASE`).
 Later, `start.bat` brings the servers back and `stop.bat` shuts them down.
+To switch from the sample data to your real account at any point, run
+`connect.bat pit-your-token`: it stores the token, wipes the sample data and
+restarts.
 After pulling new code, run `npm run build` (or `setup.bat` again) before
 `start.bat`.
 
