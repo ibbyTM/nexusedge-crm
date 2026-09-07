@@ -21,8 +21,25 @@ param(
 
 New-Item -ItemType Directory -Force -Path $Local | Out-Null
 
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function Test-ZipValid($path) {
+	try {
+		$zip = [System.IO.Compression.ZipFile]::OpenRead($path)
+		$ok = $zip.Entries.Count -gt 0
+		$zip.Dispose()
+		return $ok
+	} catch {
+		return $false
+	}
+}
+
 function Download($url, $destination, $sizeHint = "") {
-	if (Test-Path $destination) { Note "already downloaded: $(Split-Path $destination -Leaf)"; return }
+	if (Test-Path $destination) {
+		if ($destination -notlike "*.zip" -or (Test-ZipValid $destination)) { Note "already downloaded: $(Split-Path $destination -Leaf)"; return }
+		Note "$(Split-Path $destination -Leaf) is incomplete or corrupt, downloading again"
+		Remove-Item $destination -Force
+	}
 	Note "downloading $url $sizeHint"
 	# Download to a .part file first so an interrupted run never leaves a half zip behind.
 	$partial = "$destination.part"
